@@ -1,15 +1,14 @@
-var fakeConnection, fakeChannel
 var connection, channel
 
 var showLocalIce = function() {
-  fakeConnection = new RTCPeerConnection({ iceServers: [] })
-  // create a bogus data channel
-  fakeChannel = fakeConnection.createDataChannel()
+  var fakeConnection = new RTCPeerConnection({ iceServers: [] })
+  //create a bogus data channel
+  fakeConnection.createDataChannel('')
   // create offer and set local description
   fakeConnection.createOffer(fakeConnection.setLocalDescription.bind(fakeConnection), function(){})
-  // listen for candidate events
+  //listen for candidate events
   fakeConnection.onicecandidate = function(ice) {
-    if(ice.candidate) console.log('CANDIDATE!!!!\n', ice.candidate)
+      if(ice.candidate) console.log('CANDIDATE!!!!\n', ice.candidate)
   }
 }
 
