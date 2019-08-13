@@ -1,32 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
-
-<head>
-  <meta charset="UTF-8">
-  <title>WebRTC</title>
-  <link href="/style.css" rel="stylesheet" type="text/css" />
-</head>
-
-<body>
-  <div id="login">
-    <label for="username">Login</label>
-    <input id="username" placeholder="Login" required="" autofocus="">
-    <button id="login">Login</button>
-  </div>
-
-  <div id="call">
-    <!-- <video id="local" autoplay></video>
-    <video id="remote" autoplay></video> -->
-    <!-- <input id="message" placeholder="Messge to send" /> -->
-    <input id="jsonname" placeholder="json name" />
-    <button id="send-message">enviar mensaje</button>
-    <div>
-      <input id="username-to-call" placeholder="Username to call" />
-      <button id="call">Call</button>
-      <button id="close-call">Close call</button>
+  <head>
+    <meta charset="UTF-8">
+    <title>WebRTC</title>
+    <link href="style.css" rel="stylesheet" type="text/css" />
+    <script type="text/javascript" src="client.js"></script>
+  </head>
+  <body>
+    <div id="call">
+      <label for="ice">IceCandidate</label>
+      <input id="ice">
+      <button id="connect">Connect</button>
     </div>
-  </div>
-</body>
-<script type="text/javascript" src="/client.js"></script>
-
+    <div id="send">
+      <input id="message" placeholder="your message" />
+      <button id="send">Send</button>
+    </div>
+  </body>
 </html>

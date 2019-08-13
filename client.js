@@ -1,195 +1,219 @@
-// import fs from 'fs'
+var fakeConnection, fakeChannel
+var connection, channel
 
-const ws = new WebSocket('ws://10.1.1.223:3001')
-
-ws.onopen = () => {
-  console.log('Connected to the signaling server')
-}
-
-ws.onerror = err => {
-  console.error(err)
-}
-
-ws.onmessage = msg => {
-  const data = JSON.parse(msg.data)
-  console.log('Got Message', data)
-  switch (data.type) {
-    case 'login':
-      handleLogin(data.success)
-      break
-    case 'offer':
-      handleOffer(data.offer, data.username)
-      break
-    case 'answer':
-      handleAnswer(data.answer)
-      break
-    case 'candidate':
-      handleCandidate(data.candidate)
-      break
-    case 'close':
-      handleClose()
-      break
-    case 'sendJson':
-      sendJson(data.filejson)
-    default:
-      break
+var showLocalIce = function() {
+  fakeConnection = new RTCPeerConnection({ iceServers: [] })
+  // create a bogus data channel
+  fakeChannel = fakeConnection.createDataChannel()
+  // create offer and set local description
+  fakeConnection.createOffer(fakeConnection.setLocalDescription.bind(fakeConnection), function(){})
+  // listen for candidate events
+  fakeConnection.onicecandidate = function(ice) {
+    if(ice.candidate) console.log('CANDIDATE!!!!\n', ice.candidate)
   }
 }
 
-let connection = null
-let name = null
-let otherUsername = null
-let channel = null
-let usernameLocal
-
-const sendMessage = message => {
-  if (otherUsername) {
-    message.otherUsername = otherUsername
-  }
-
-  ws.send(JSON.stringify(message))
+var handleChannel = function(evt) {
+  
 }
 
-const sendJson = async fileJson => {
-  let cantMjes = fileJson.test.length
-  channel.send(cantMjes)
-  fileJson.test.forEach(e => channel.send(e)) 
+var setConnection = function() {
+  connection = new RTCPeerConnection({ iceServers: [] })
+  // create data channel
+  channel = connection.createDataChannel({ optional: [{ RtpDataChannels: true}] })
+  // handle chennel connections
+  connection.ondatachannel = handleChannel
+  // no need to listen for candidates because we will manually use the input value
+  // fakeConnection.onicecandidate = function(ice) {...
 }
 
-document.querySelector('div#call').style.display = 'none'
+var init = function() {
+  showLocalIce()
+}
 
-document.querySelector('button#login').addEventListener('click', event => {
-  usernameLocal = document.querySelector('input#username').value
+window.onload = init
 
-  if (usernameLocal.length < 0) {
-    alert('Please enter a username')
-    return
-  }
 
-  sendMessage({
-    type: 'login',
-    username: usernameLocal
-  })
-})
+// ws.onmessage = msg => {
+//   const data = JSON.parse(msg.data)
+//   console.log('Got Message', data)
+//   switch (data.type) {
+//     case 'login':
+//       handleLogin(data.success)
+//       break
+//     case 'offer':
+//       handleOffer(data.offer, data.username)
+//       break
+//     case 'answer':
+//       handleAnswer(data.answer)
+//       break
+//     case 'candidate':
+//       handleCandidate(data.candidate)
+//       break
+//     case 'close':
+//       handleClose()
+//       break
+//     case 'sendJson':
+//       sendJson(data.filejson)
+//     default:
+//       break
+//   }
+// }
 
-const handleLogin = async success => {
-  if (success === false) {
-    alert('Username already taken')
-  } else {
-    document.querySelector('div#login').style.display = 'none'
-    document.querySelector('div#call').style.display = 'block'
+// let connection = null
+// let name = null
+// let otherUsername = null
+// let channel = null
+// let usernameLocal
 
-    const configuration = {
-      iceServers: [{ url: 'stun:stun2.1.google.com:19302' }],
-    }
+// const sendMessage = message => {
+//   if (otherUsername) {
+//     message.otherUsername = otherUsername
+//   }
 
-    connection = new RTCPeerConnection(configuration)
+//   ws.send(JSON.stringify(message))
+// }
 
-    console.log('new RTCPeerConnection connection', connection)
+// const sendJson = async fileJson => {
+//   let cantMjes = fileJson.test.length
+//   channel.send(cantMjes)
+//   fileJson.test.forEach(e => channel.send(e)) 
+// }
 
-    channel = connection.createDataChannel({ optional: [{ RtpDataChannels: true}] })
+// document.querySelector('div#call').style.display = 'none'
 
-    connection.ondatachannel = event => {
-      event.channel.onmessage = event => {
-        console.log('event.channel.onmessage', event.data);
+// document.querySelector('button#login').addEventListener('click', event => {
+//   usernameLocal = document.querySelector('input#username').value
 
-    };
+//   if (usernameLocal.length < 0) {
+//     alert('Please enter a username')
+//     return
+//   }
 
-    event.channel.onopen = event => {
-      console.log('event.channel.onopen', event)
-        channel.send('RTCDataChannel opened.', event);
-    };
+//   sendMessage({
+//     type: 'login',
+//     username: usernameLocal
+//   })
+// })
+
+// const handleLogin = async success => {
+//   if (success === false) {
+//     alert('Username already taken')
+//   } else {
+//     document.querySelector('div#login').style.display = 'none'
+//     document.querySelector('div#call').style.display = 'block'
+
+//     const configuration = {
+//       iceServers: [{ url: 'stun:stun2.1.google.com:19302' }],
+//     }
+
+//     connection = new RTCPeerConnection(configuration)
+
+//     console.log('new RTCPeerConnection connection', connection)
+
+//     channel = connection.createDataChannel({ optional: [{ RtpDataChannels: true}] })
+
+//     connection.ondatachannel = event => {
+//       event.channel.onmessage = event => {
+//         console.log('event.channel.onmessage', event.data);
+
+//     };
+
+//     event.channel.onopen = event => {
+//       console.log('event.channel.onopen', event)
+//         channel.send('RTCDataChannel opened.', event);
+//     };
     
-    event.channel.onclose = event => {
-        console.log('RTCDataChannel closed.', event);
-    };
+//     event.channel.onclose = event => {
+//         console.log('RTCDataChannel closed.', event);
+//     };
     
-    event.channel.onerror = event => {
-        console.error(event);
-    };
-    }
+//     event.channel.onerror = event => {
+//         console.error(event);
+//     };
+//     }
 
-    connection.onicecandidate = event => {
-      console.log('event.candidate', event.candidate)
-      if (event.candidate) {
-        sendMessage({
-          type: 'candidate',
-          candidate: event.candidate
-        })
-      }
-    }
-  }
-}
-document.querySelector('button#send-message').addEventListener('click', () => {
-  const jsonName = document.querySelector('input#jsonname').value
-  ws.send(JSON.stringify({ username: usernameLocal, type: 'getJson', name: jsonName }))
+//     connection.onicecandidate = event => {
+//       console.log('event.candidate', event.candidate)
+//       if (event.candidate) {
+//         sendMessage({
+//           type: 'candidate',
+//           candidate: event.candidate
+//         })
+//       }
+//     }
+//   }
+// }
+// document.querySelector('button#send-message').addEventListener('click', () => {
+//   const jsonName = document.querySelector('input#jsonname').value
+//   ws.send(JSON.stringify({ username: usernameLocal, type: 'getJson', name: jsonName }))
 
-  // channel.send('test mensaje')
-})
+//   // channel.send('test mensaje')
+// })
 
-document.querySelector('button#call').addEventListener('click', () => {
-  const callToUsername = document.querySelector('input#username-to-call').value
+// document.querySelector('button#call').addEventListener('click', () => {
+//   const callToUsername = document.querySelector('input#username-to-call').value
 
-  if (callToUsername.length === 0) {
-    alert('Enter a username 😉')
-    return
-  }
+//   if (callToUsername.length === 0) {
+//     alert('Enter a username 😉')
+//     return
+//   }
 
-  otherUsername = callToUsername
+//   otherUsername = callToUsername
 
-  connection.createOffer(
-    offer => {
-      sendMessage({
-        type: 'offer',
-        offer: offer
-      })
+//   connection.createOffer(
+//     offer => {
+//       sendMessage({
+//         type: 'offer',
+//         offer: offer
+//       })
 
-      connection.setLocalDescription(offer)
-    },
-    error => {
-      alert('Error when creating an offer')
-      console.error(error)
-    }
-  )
-})
+//       connection.setLocalDescription(offer)
+//     },
+//     error => {
+//       alert('Error when creating an offer')
+//       console.error(error)
+//     }
+//   )
+// })
 
-const handleOffer = (offer, username) => {
-  otherUsername = username
-  connection.setRemoteDescription(new RTCSessionDescription(offer))
-  connection.createAnswer(
-    answer => {
-      connection.setLocalDescription(answer)
-      sendMessage({
-        type: 'answer',
-        answer: answer
-      })
-    },
-    error => {
-      alert('Error when creating an answer')
-      console.error(error)
-    }
-  )
-}
+// const handleOffer = (offer, username) => {
+//   otherUsername = username
+//   connection.setRemoteDescription(new RTCSessionDescription(offer))
+//   connection.createAnswer(
+//     answer => {
+//       connection.setLocalDescription(answer)
+//       sendMessage({
+//         type: 'answer',
+//         answer: answer
+//       })
+//     },
+//     error => {
+//       alert('Error when creating an answer')
+//       console.error(error)
+//     }
+//   )
+// }
 
-const handleAnswer = answer => {
-  connection.setRemoteDescription(new RTCSessionDescription(answer))
-}
+// const handleAnswer = answer => {
+//   connection.setRemoteDescription(new RTCSessionDescription(answer))
+// }
 
-const handleCandidate = candidate => {
-  connection.addIceCandidate(new RTCIceCandidate(candidate))
-}
+// const handleCandidate = candidate => {
+//   connection.addIceCandidate(new RTCIceCandidate(candidate))
+// }
 
-document.querySelector('button#close-call').addEventListener('click', () => {
-  sendMessage({
-    type: 'close'
-  })
-  handleClose()
-})
+// document.querySelector('button#close-call').addEventListener('click', () => {
+//   sendMessage({
+//     type: 'close'
+//   })
+//   handleClose()
+// })
 
-const handleClose = () => {
-  otherUsername = null
-  document.querySelector('video#remote').src = null
-  connection.close()
-  connection.onicecandidate = null
-  connection.onaddstream = null
-}
+// const handleClose = () => {
+//   otherUsername = null
+//   document.querySelector('video#remote').src = null
+//   connection.close()
+//   connection.onicecandidate = null
+//   connection.onaddstream = null
+// }
