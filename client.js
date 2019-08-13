@@ -8,38 +8,85 @@ var showLocalIce = function() {
   fakeConnection.createOffer(fakeConnection.setLocalDescription.bind(fakeConnection), function(){})
   //listen for candidate events
   fakeConnection.onicecandidate = function(ice) {
-      if(ice.candidate) console.log('CANDIDATE!!!!\n', ice.candidate)
+    if(ice.candidate) console.log('CANDIDATE!!!!\n', ice.candidate, JSON.stringify(ice.candidate))
   }
 }
 
-var handleChannel = function(evt) {
-  
+var handleMessage = function(evt) => {
+  console.log('event.channel.onmessage', evt.data);
 }
 
-var setConnection = function() {
+var handleOpen = function(evt) => {
+  console.log('event.channel.onopen', evt.data);
+  channel.send('RTCDataChannel opened.', evt)
+}
+
+var handleClose = function(evt) => {
+  console.log('event.channel.onclose', evt.data)
+}
+
+var handleError = function(evt) => {
+  console.log('event.channel.onerror', evt.data)
+}
+
+var handleChannel = function(evt) {
+  event.channel.onmessage = handleMessage
+  event.channel.onopen = handleOpen
+  event.channel.onclose = handleClose
+  event.channel.onerror = handleError
+}
+
+var handleOffer = function(offer) {
+  connection.setLocalDescription(offer)
+  // we need a way to send the offer
+  console.log('offer', offer, JSON.stringify(offer))
+}
+
+var handleOfferError = function(error) {
+  alert('Error when creating an offer')
+  console.error(error)
+}
+
+var setConnection = function(iceCandidate) {
+  console.log('Connecting to ICE:', iceCandidate)
   connection = new RTCPeerConnection({ iceServers: [] })
   // create data channel
   channel = connection.createDataChannel({ optional: [{ RtpDataChannels: true}] })
   // handle chennel connections
   connection.ondatachannel = handleChannel
+  // add ICE Candidate manually
+  connection.addIceCandidate(new RTCIceCandidate(iceCandidate))
+  // send offer to candidate
+  connection.createOffer(handleOffer, handleOfferError)
   // no need to listen for candidates because we will manually use the input value
-  // fakeConnection.onicecandidate = function(ice) {...
+  //// connection.onicecandidate = function(iceCandidate) {...
+}
+
+var connectionHandler = function(evt) {
+  var iceString = document.querySelector('#ice').value
+  var iceCandidate = JSON.parse(iceString)
+  setConnection(iceCandidate)
 }
 
 var init = function() {
   showLocalIce()
+  document.querySelector('#connect')
+    .addEventListener('click', connectionHandler)
 }
 
 window.onload = init
+
+
+
+
+
+
 
 
 // ws.onmessage = msg => {
 //   const data = JSON.parse(msg.data)
 //   console.log('Got Message', data)
 //   switch (data.type) {
-//     case 'login':
-//       handleLogin(data.success)
-//       break
 //     case 'offer':
 //       handleOffer(data.offer, data.username)
 //       break
@@ -79,70 +126,7 @@ window.onload = init
 //   fileJson.test.forEach(e => channel.send(e)) 
 // }
 
-// document.querySelector('div#call').style.display = 'none'
 
-// document.querySelector('button#login').addEventListener('click', event => {
-//   usernameLocal = document.querySelector('input#username').value
-
-//   if (usernameLocal.length < 0) {
-//     alert('Please enter a username')
-//     return
-//   }
-
-//   sendMessage({
-//     type: 'login',
-//     username: usernameLocal
-//   })
-// })
-
-// const handleLogin = async success => {
-//   if (success === false) {
-//     alert('Username already taken')
-//   } else {
-//     document.querySelector('div#login').style.display = 'none'
-//     document.querySelector('div#call').style.display = 'block'
-
-//     const configuration = {
-//       iceServers: [{ url: 'stun:stun2.1.google.com:19302' }],
-//     }
-
-//     connection = new RTCPeerConnection(configuration)
-
-//     console.log('new RTCPeerConnection connection', connection)
-
-//     channel = connection.createDataChannel({ optional: [{ RtpDataChannels: true}] })
-
-//     connection.ondatachannel = event => {
-//       event.channel.onmessage = event => {
-//         console.log('event.channel.onmessage', event.data);
-
-//     };
-
-//     event.channel.onopen = event => {
-//       console.log('event.channel.onopen', event)
-//         channel.send('RTCDataChannel opened.', event);
-//     };
-    
-//     event.channel.onclose = event => {
-//         console.log('RTCDataChannel closed.', event);
-//     };
-    
-//     event.channel.onerror = event => {
-//         console.error(event);
-//     };
-//     }
-
-//     connection.onicecandidate = event => {
-//       console.log('event.candidate', event.candidate)
-//       if (event.candidate) {
-//         sendMessage({
-//           type: 'candidate',
-//           candidate: event.candidate
-//         })
-//       }
-//     }
-//   }
-// }
 // document.querySelector('button#send-message').addEventListener('click', () => {
 //   const jsonName = document.querySelector('input#jsonname').value
 //   ws.send(JSON.stringify({ username: usernameLocal, type: 'getJson', name: jsonName }))
